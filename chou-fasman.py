@@ -243,13 +243,3 @@ while i < len(answer_helix):
               i+=1
 
 print("Final answer : ","".join(final_ans))
-
-
-
-#To find the all the strings from answer_beta and answer_helix that are B and H 
-
-# Doubts : Do we check for left side extension as well in beta sheets
-#          Is the nucleation site in beta >=3
-#          and for extension is it >=4 or >4 
-# finally we check for that the common region or at each window?
-# if i -> i+6 we get helix do we check for beta sheet there only ? and change 
