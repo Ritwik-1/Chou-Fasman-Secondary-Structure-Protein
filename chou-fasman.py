@@ -8,16 +8,32 @@
 # Chou and Fasman parameters to be used for the prediction are as following:
 
 
-# For H : take two pointers i and j , j=i+6 and then i++ j++ till propensity scores are >= 4  
-# or j >= len(string)
+# Algorithm for Helix:-
+# Take two pointers i and j , j=i+6 and then i++ till 
+# we fins a window with propensity scores are >= 4 or j >= len(string)
 # basically see score(string[i:j] >= 4)
-#if that is true then store this score and check for the element i-- and j++ if true then add 
-#else i = j+1 and j = i+6
+# If we find a window with score >=4 then we check extensions both on the 
+# left and right i.e. j+1,j,j-1,j-2 amino acids must have score >=4 for i+1 extension
+# and i-1,i,i+1,i+2 must have score >= 4 for i-1 extension
 
-def calculateScore(s):
+# Algorithm for Beta sheet:
+# same as helix , here we take a window of 5 and select 
+# a window with score >= 3 for nucleation
+# then for extension we take score >=4
+# propensities are taken from the beta sheet dictionary
+
+
+def calculateScoreHelix(s):
     score = 0
     for i in s:
         score += propensities_helix[i]
+    
+    return score
+
+def calculateScoreBeta(s):
+    score = 0
+    for i in s:
+        score += propensities_beta[i]
     
     return score
 
@@ -100,7 +116,7 @@ i = 0
 j = i+6
 
 while(j < len(sequence)):
-    if(calculateScore(sequence[i:j]) >= 4):
+    if(calculateScoreHelix(sequence[i:j]) >= 4):
         for e in range(i,j):
             answer_helix[e] = "H"
         # now check for extensions on both sides 
@@ -132,7 +148,7 @@ while(j < len(sequence)):
 i = 0
 j = i+5
 while(j < len(sequence)):
-    if(calculateScore(sequence[i:j]) >= 3):
+    if(calculateScoreBeta(sequence[i:j]) >= 3):
         for e in range(i,j):
             answer_beta[e] = "B"
         # now check for extensions on both sides 
@@ -160,10 +176,77 @@ while(j < len(sequence)):
         j+=1
         
             
-print("".join(answer_helix))
-print("".join(answer_beta))
+print("Answer with helices : ","".join(answer_helix))
+print("Answer with beta sheets : ","".join(answer_beta))
 
 
+print("Now resolving common regions :-")
+
+# This will store the final answer, i.e final secondary structure 
+# after accounting the conflicting regions
+
+final_ans = list(sequence)
+
+
+# For conflicting regions we will take the score of the
+# sequence of conflict and see where it is greater ,i.e 
+# whether in case of B sheets or alpha helix
+
+# For this we will start i=0 and continue i++
+# till any one sequence is not H or B
+# then for i to i+k , k being length of common region
+# we will calculate scores and assign accordingly 
+  
+
+i = 0
+
+
+while i < len(answer_helix):
+      if(answer_helix[i] == "H" and answer_beta[i] == "B"):
+          # If the amino acids are H and B on both 
+          # Then check till where are they same
+          start = i
+          while(answer_helix[i] == "H" and answer_beta[i] == "B"):
+              i+=1
+          end = i
+
+          # when we get the start and end of the conflicting region
+          # then calculate score
+          score_beta = calculateScoreBeta(sequence[start:end])
+          score_helix = calculateScoreHelix(sequence[start:end])
+
+          print("Common region starts at index : ",start)
+          print("Common region ends at index : ",end)
+          print("score_beta : ",score_beta)
+          print("score_helix : ",score_helix)
+            
+          # assign the conflicting region based on score answers
+          if(score_beta > score_helix):
+              final_ans[start:end] = "B"*((end-start))
+          else:
+              final_ans[start:end] = "H"*((end-start))
+      else:
+          # If the Beta sequence is not B and Helix is H
+          # Then the secondary structure must be H at that position
+          if(answer_helix[i] == "H" and answer_beta[i] != "B"):
+              final_ans[i] = "H"
+              i+=1
+          # If the Beta sequence is B and Helix is not H 
+          # Then the secondary structure must be B at that position
+          elif(answer_beta[i] == "B" and answer_helix[i] != "H"):
+              final_ans[i] = "B"
+              i+=1
+          # If none of the secondary structure can be assigned then we 
+          # add the original sequence as it is
+          else:
+              final_ans[i] = sequence[i]
+              i+=1
+
+print("Final answer : ","".join(final_ans))
+
+
+
+#To find the all the strings from answer_beta and answer_helix that are B and H 
 
 # Doubts : Do we check for left side extension as well in beta sheets
 #          Is the nucleation site in beta >=3
